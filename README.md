@@ -46,9 +46,11 @@ A comprehensive attendance management system with AI-powered face recognition fo
 - **Uvicorn** for ASGI server
 
 ### AI & Face Detection
-- **Custom Image Comparison Algorithm**: Pixel-based similarity analysis
+- **DeepFace with ArcFace Model**: State-of-the-art face recognition
+- **Google Generative AI (Gemini 1.5 Flash)**: Advanced multimodal AI analysis
+- **Simple Image Comparison**: Reliable pixel-based fallback
+- **Triple-Layer System**: DeepFace → Google AI → Simple Comparison
 - **Confidence Thresholds**: Smart matching with 50-60% inconclusive range
-- **Fallback System**: Robust error handling and backup logic
 
 ## 📦 Installation & Setup
 
@@ -88,7 +90,7 @@ venv\Scripts\activate
 pip install -r requirements.txt
 
 # Start the server
-uvicorn app.main:app --reload --port 5000
+uvicorn app.main:app --reload --port 8000
 ```
 
 ## 🎮 Usage
@@ -129,16 +131,31 @@ DATABASE_URL=sqlite:///./student_credentials.db
 SECRET_KEY=your_secret_key_here
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
+GOOGLE_API_KEY=your_google_api_key_here
 COHERE_API_KEY=your_cohere_api_key_here
 ```
 
 ## 🎯 Face Detection Logic
 
-The system uses a sophisticated face detection algorithm with the following confidence thresholds:
+The system uses **dual AI face recognition** with automatic fallback:
 
-- **Below 50%**: ❌ Not Matched → Mark Absent
-- **50-60%**: ⚠️ Inconclusive → Manual Decision
-- **Above 60%**: ✅ Matched → Mark Present
+### Primary: DeepFace with ArcFace Model
+- **Model**: ArcFace (state-of-the-art face recognition)
+- **Detector**: RetinaFace (robust face detection)
+- **Thresholds**:
+  - **Below 40%**: ❌ No Match → Mark Absent
+  - **40-60%**: ⚠️ Possible Match → Manual Decision
+  - **Above 60%**: ✅ Match → Mark Present
+
+### Fallback: Google Generative AI
+- **Model**: Gemini 1.5 Flash with Vision AI
+- **Method**: AI-powered image analysis and comparison
+- **Automatic fallback** when DeepFace fails
+
+### Smart Error Handling
+- **Primary**: DeepFace with ArcFace + RetinaFace
+- **Fallback**: Google AI if DeepFace fails
+- **Graceful degradation** with clear error messages
 
 ## 📊 Database Schema
 

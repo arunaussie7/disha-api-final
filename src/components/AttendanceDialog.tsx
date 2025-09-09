@@ -93,8 +93,8 @@ const AttendanceDialog = ({ open, onOpenChange, students, onAttendanceUpdate }: 
 
     try {
       setIsComparing(true);
-      setVerificationStatus({ status: 'none', message: 'Analyzing faces with image comparison...' });
-      setDebugInfo(prev => prev + ` | Starting analysis...`);
+      setVerificationStatus({ status: 'none', message: 'Analyzing faces with DeepFace ArcFace model...' });
+      setDebugInfo(prev => prev + ` | Starting DeepFace analysis with ArcFace model...`);
 
       // Convert file to base64
       const fileBase64 = await new Promise<string>((resolve) => {
@@ -107,25 +107,30 @@ const AttendanceDialog = ({ open, onOpenChange, students, onAttendanceUpdate }: 
       console.log('Reference file:', selectedFile.name);
       console.log('Captured image exists:', !!capturedImage);
       
-      const result = await compareFaces(fileBase64, capturedImage);
-      console.log('Face analysis result:', result);
+      const result = await compareFaces(fileBase64, capturedImage, selectedStudent.id);
+      console.log('DeepFace analysis result:', result);
 
-      setDebugInfo(prev => prev + ` | Result: ${result.matched ? 'MATCHED' : 'NOT MATCHED'} (${result.confidence.toFixed(1)}%)`);
+      setDebugInfo(prev => prev + ` | Result: ${result.matchStatus} (${result.confidence.toFixed(1)}%) | Model: ${result.modelUsed}`);
 
-      if (result.confidence > 60) {
+      if (result.matchStatus === 'MATCH') {
         setVerificationStatus({
           status: 'matched',
-          message: `✅ Face matched with ${result.confidence.toFixed(1)}% confidence! You can mark the student as present.`
+          message: `✅ ${result.message}`
         });
-      } else if (result.confidence < 50) {
+      } else if (result.matchStatus === 'NO_MATCH') {
         setVerificationStatus({
           status: 'not_matched',
-          message: `❌ Face did not match (${result.confidence.toFixed(1)}% confidence). Please mark as absent.`
+          message: `❌ ${result.message}`
+        });
+      } else if (result.matchStatus === 'POSSIBLE_MATCH') {
+        setVerificationStatus({
+          status: 'inconclusive',
+          message: `⚠️ ${result.message}`
         });
       } else {
         setVerificationStatus({
-          status: 'inconclusive',
-          message: `⚠️ Inconclusive result (${result.confidence.toFixed(1)}% confidence). You can choose to mark present or absent.`
+          status: 'not_matched',
+          message: `❌ ${result.message}`
         });
       }
     } catch (error) {
